@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    
+    
+        <meta name="twitter:card" content="summary"/>
+    
+
+
+
+<meta name="twitter:title" content="Integration Testing a JSON API in Phoenix"/>
+<meta name="twitter:description" content=""/>
+<meta name="twitter:site" content="@dantswain"/>
+
+
+
+  	<meta property="og:title" content="Integration Testing a JSON API in Phoenix &middot; Dan&#39;s Blog" />
+  	<meta property="og:site_name" content="Dan&#39;s Blog" />
+  	<meta property="og:url" content="https://dantswain.github.io/2015/04/19/integration-testing-a-json-api-in-phoenix/" />
+
+    
+        
+            <meta property="og:image" content="/images/flockBack.png"/>
+        
+    
+
+    
+    <meta property="og:description" content="" />
+  	<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2015-04-19T00:00:00Z" />
+
+    
+    <meta property="article:tag" content="phoenix" />
+    
+    
+
+    <title>Integration Testing a JSON API in Phoenix &middot; Dan&#39;s Blog</title>
+
+    
+    <meta name="description" content="TL;DR To do integration testing in Phoenix, first enable the app&amp;rsquo;s content serving in its config, then use an HTTP client library (I use HTTPoison below) " />
+    
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+
+    <link rel="stylesheet" type="text/css" href="/css/screen.css" />
+    
+
+    
+
+    
+
+    
+      
+          <link href="/index.xml" rel="alternate" type="application/rss+xml" title="Dan&#39;s Blog" />
+      
+      
+    
+    <meta name="generator" content="Hugo 0.32.4" />
+
+    <link rel="canonical" href="https://dantswain.github.io/2015/04/19/integration-testing-a-json-api-in-phoenix/" />
+
+    
+      
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": 
+    },
+    "author": {
+        "@type": "Person",
+        "name": ,
+        
+        "url": https://dantswain.com,
+        "sameAs": [
+            
+            
+             
+             
+             
+             
+             
+            
+        ],
+        "description": Fellow at simpli.fi. Robotics Ph.D. I like building things. 
+        
+    },
+    "headline": Integration Testing a JSON API in Phoenix,
+    "name": Integration Testing a JSON API in Phoenix,
+    "wordCount": 2037,
+    "timeRequired": "PT10M",
+    "inLanguage": {
+      "@type": "Language",
+      "alternateName": en
+    },
+    "url": https://dantswain.github.io/2015/04/19/integration-testing-a-json-api-in-phoenix/,
+    "datePublished": 2015-04-19T00:00Z,
+    "dateModified": 2015-04-19T00:00Z,
+    
+    "keywords": phoenix,
+    "description": ,
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": https://dantswain.github.io/2015/04/19/integration-testing-a-json-api-in-phoenix/
+    }
+}
+    </script>
+    
+
+
+    
+
+    
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-30160681-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+    
+
+    
+</head>
+<body class="nav-open">
+
+ <div class="site-wrapper">
+
+  
+      <ul class="nav">
+        
+        
+        
+          
+            <li class="nav-item">
+              <a href="/about">About me</a>
+            </li>
+        
+          
+            <li class="nav-item">
+              <a href="/">Home</a>
+            </li>
+        
+        
+      </ul>
+
+
+
+
+
+
+
+<header class="main-header post-head no-cover">
+    <nav class="main-nav overlay clearfix">
+
+
+      
+    </nav>
+
+    
+
+
+</header>
+
+
+
+<main class="content" role="main">
+
+
+
+
+  <article class="post post">
+    <header class="post-header">
+      <nav class="breadcrumb">
+        
+        
+        
+        
+        
+        
+        
+      </nav>
+
+
+        <h1 class="post-title">Integration Testing a JSON API in Phoenix</h1>
+        <small></small>
+
+        <section class="post-meta">
+        
+          <time class="post-date" datetime="2015-04-19T00:00:00Z">
+            Apr 19, 2015
+          </time>
+        
+         
+          <span class="post-tag small"><a href="https://dantswain.github.io//tags/phoenix/">#phoenix</a></span>
+         
+        </section>
+    </header>
+
+    <section class="post-content">
+
+
+
+
+<h1 id="tl-dr">TL;DR</h1>
+
+<p>To do integration testing in Phoenix, first enable the app&rsquo;s content
+serving in its config, then use an HTTP client library (I use
+HTTPoison below) to make requests.  The source code corresponding to
+this post is on my github at
+<a href="https://github.com/dantswain/calculon">https://github.com/dantswain/calculon</a>.</p>
+
+<h1 id="introduction-plus-a-little-discourse-on-testing">Introduction (plus a little discourse on testing)</h1>
+
+<p>I like integration-level testing, especially for web apps and doubly
+so for APIs.  A good integration test suite can help you work out
+usability issues with your API, give you confidence that your
+deployment is stable, and provide a springboard for troubleshooting
+issues down the road.  Publishing your test suite can also be a decent
+way to document it.  If you&rsquo;re working in Ruby, there is actually a
+gem to
+<a href="https://github.com/zipmark/rspec_api_documentation">document your API through rspec</a>
+(which I highly recommend).  I&rsquo;m not currently aware of an equivalent
+package for Elixir, though that would be awesome.</p>
+
+<p>I was recently working on an API for a personal project using the
+<a href="http://phoenixframework.org">Phoenix framework</a> for
+<a href="http://elixir-lang.org">Elixir</a> and realized there wasn&rsquo;t much
+guidance (at least as of the time of writing) on writing integration
+tests.  I was able to figure it out after a little googling, so I
+thought I&rsquo;d write up what I&rsquo;ve learned.</p>
+
+<p>This post covers integration testing of a JSON API.  It&rsquo;s
+theoretically quite possible to extend the same ideas to test a
+generic web app, though it could be tricky to handle Javascript.</p>
+
+<blockquote> Note: Phoenix hasn't yet reached a 1.0 release version
+and is correspondingly in a little bit of flux between minor versions.
+This post was written using Phoenix v0.11.0 running on Elixir v1.0.2.
+I know there are a couple differences from v0.10.0 to v0.11.0 that
+will probably break this; see the note at the bottom of this post for
+at least one difference that I know of.  </blockquote>
+
+<h1 id="it-s-just-curling-kind-of">It&rsquo;s just curling (kind of)</h1>
+
+<p>In theory, you could write integration tests for your API using any
+language and framework you want. You could script the tests in the
+shell using <a href="http://curl.haxx.se/docs/manpage.html">curl</a>, or write a
+test suite in Ruby with <a href="http://rspec.info">rspec</a>.  All we need to do
+is make HTTP requests and validate the responses.</p>
+
+<p>However, we&rsquo;re already using Elixir and Elixir provides a pretty good
+testing framework called
+<a href="http://elixir-lang.org/docs/v1.0/ex_unit/ExUnit.html">ExUnit</a>.
+Furthermore, there&rsquo;s probably code in our application that will help
+us a lot when writing tests - model code is useful for generating
+fixture data, etc.  We may also want to validate the state of the
+application after a request.</p>
+
+<blockquote> Aside: In an ideal world, integration tests should
+(debatably) share nothing with your application code.  That's because
+you want integration tests not to depend on your implementation
+details.  Using model code to set up fixtures and validate application
+state is a fairly reasonable compromise because it generally
+makes us a lot more productive. </blockquote>
+
+<h1 id="setting-up-an-example-app">Setting up an example app</h1>
+
+<p>Let&rsquo;s build an app that does something very simple so that we can
+focus on the mechanics of integration testing rather than the
+implementation details.  We aren&rsquo;t doing any database calls since that
+would add a fair amount of complexity to the code and wouldn&rsquo;t help us
+understand integration testing a Phoenix app.  Nothing that we do here
+will preclude us from making and testing database calls later on, so
+let&rsquo;s just avoid it.</p>
+
+<p>We&rsquo;ll make an app that performs simple arithmetic calculations.  The
+goal is to be able to POST a calculation to the server and have the
+response include the result of the calculation. We&rsquo;ll call the app
+<a href="http://futurama.wikia.com/wiki/Calculon">Calculon</a>.</p>
+
+<p>Follow the usual process to set up a Phoenix app.  As of v0.11.0, you
+have to run <code>mix phoenix.new</code> from within the installer directory of
+the Phoenix repo (as of the time of writing, the documentation hasn&rsquo;t
+been updated).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">in ~/src/phoenix/installer <span style="color:#f92672">(</span>v0.11.0<span style="color:#f92672">)</span>
+$ mix phoenix.new ../../calculon</code></pre></div>
+<p>Set up an endpoint so that we can <code>POST /api/v1/calculations</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># inside web/router.ex</span>
+scope <span style="color:#e6db74">&#34;/api/v1&#34;</span>, <span style="color:#a6e22e">Calculon</span> do
+  pipe_through <span style="color:#e6db74">:api</span>
+
+  post <span style="color:#e6db74">&#34;/calculations&#34;</span>, <span style="color:#a6e22e">CalculationsController</span>, <span style="color:#e6db74">:create</span>
+end</code></pre></div>
+<p>Then add the corresponding controller:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># web/controllers/calculations_controller.ex</span>
+defmodule <span style="color:#a6e22e">Calculon.CalculationsController</span> do
+  use <span style="color:#a6e22e">Phoenix.Controller</span>
+  
+  plug <span style="color:#e6db74">:action</span>
+  
+  def create(conn, _params) do
+    conn
+    <span style="color:#f92672">|&gt;</span> put_status(<span style="color:#ae81ff">201</span>)
+    <span style="color:#f92672">|&gt;</span> json  %{<span style="color:#e6db74">ok</span>: true}
+  end
+end</code></pre></div>
+<p>This controller doesn&rsquo;t really do anything at this point, it just
+handles the request and sets the HTTP status code to 201.  We&rsquo;ll add
+functionality later.</p>
+
+<p>We can now run our app with <code>mix phoenix.server</code> and use curl to
+verify that it&rsquo;s working:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -v -XPOST -d<span style="color:#e6db74">&#39;{&#34;calculation&#34;: { &#34;input&#34;: &#34;1 + 1&#34; }}&#39;</span> <span style="color:#e6db74">&#39;http://127.0.0.1:4000/api/v1/calculations&#39;</span>
+<span style="color:#75715e"># (trimmed output)
+</span><span style="color:#75715e"># ...
+</span><span style="color:#75715e"></span>* Connected to <span style="color:#ae81ff">127</span>.0.0.1 <span style="color:#f92672">(</span><span style="color:#ae81ff">127</span>.0.0.1<span style="color:#f92672">)</span> port <span style="color:#ae81ff">4000</span> <span style="color:#f92672">(</span><span style="color:#75715e">#0)
+</span><span style="color:#75715e"></span>&gt; POST /api/v1/calculations HTTP/1.1
+<span style="color:#75715e"># ...
+</span><span style="color:#75715e"></span>* upload completely sent off: <span style="color:#ae81ff">37</span> out of <span style="color:#ae81ff">37</span> bytes
+&lt; HTTP/1.1 <span style="color:#ae81ff">201</span> Created
+<span style="color:#75715e"># ...
+</span><span style="color:#75715e"></span><span style="color:#f92672">{</span><span style="color:#e6db74">&#34;ok&#34;</span>:true<span style="color:#f92672">}</span>% </code></pre></div>
+<p>We get back an HTTP 201 with <code>{&quot;ok&quot;: true}</code> as the body, which is
+exactly what we should get.</p>
+
+<h1 id="httpoison-for-requests">HTTPoison for requests</h1>
+
+<p><a href="https://github.com/edgurgel/httpoison">HTTPoison</a> is an Elixir
+library for performing HTTP requests.  Add it to the deps function in
+your <code>mix.exs</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># inside mix.exs</span>
+defp deps do
+  [ <span style="color:#75715e">#... other deps</span>
+  {<span style="color:#e6db74">:httpoison</span>, <span style="color:#e6db74">&#34;~&gt; 0.6&#34;</span>}]
+end</code></pre></div>
+<p>Then run <code>mix deps.get</code> and <code>mix deps.compile</code>.</p>
+
+<p>Now let&rsquo;s add a helper module to make API calls, making heavy use of
+HTTPoison&rsquo;s <code>HTTPoison.Base</code> macro and the callbacks that it
+provides to shape requests and responses.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># lib/calculon/support/api_call.ex</span>
+defmodule <span style="color:#a6e22e">Calculon.Support.APICall</span> do
+  use <span style="color:#a6e22e">HTTPoison.Base</span>
+
+  <span style="color:#75715e"># prepend the url with the server api route</span>
+  def process_url(url) do
+    api_url <span style="color:#f92672">&lt;&gt;</span> url
+  end
+
+  <span style="color:#75715e"># try to decode response bodies as JSON</span>
+  <span style="color:#75715e">#   but reply with the raw body if there are</span>
+  <span style="color:#75715e">#   any errors (e.g., invalid JSON)</span>
+  def process_response_body(body) do
+    try do
+      <span style="color:#a6e22e">Poison</span><span style="color:#f92672">.</span>decode!(body, <span style="color:#e6db74">keys</span>: <span style="color:#e6db74">:atoms!</span>)
+    rescue
+      _ <span style="color:#f92672">-&gt;</span> body
+    end
+  end
+
+  <span style="color:#75715e"># always convert the request body to JSON</span>
+  def process_request_body(body) do
+    <span style="color:#a6e22e">Poison</span><span style="color:#f92672">.</span>encode!(body)
+  end
+
+  <span style="color:#75715e"># make sure we&#39;re posting JSON</span>
+  def process_request_headers(headers) do
+    [{<span style="color:#e6db74">&#39;content-type&#39;</span>, <span style="color:#e6db74">&#39;application/json&#39;</span>} <span style="color:#f92672">|</span> headers]
+  end
+
+  <span style="color:#75715e"># API url helper - will work in any env</span>
+  defp api_url do
+    endpoint_config <span style="color:#f92672">=</span> <span style="color:#a6e22e">Application</span><span style="color:#f92672">.</span>get_env(<span style="color:#e6db74">:calculon</span>, <span style="color:#a6e22e">Calculon.Endpoint</span>)
+    host <span style="color:#f92672">=</span> <span style="color:#a6e22e">Keyword</span><span style="color:#f92672">.</span>get(endpoint_config, <span style="color:#e6db74">:url</span>) <span style="color:#f92672">|&gt;</span> <span style="color:#a6e22e">Keyword</span><span style="color:#f92672">.</span>get(<span style="color:#e6db74">:host</span>)
+    port <span style="color:#f92672">=</span> <span style="color:#a6e22e">Keyword</span><span style="color:#f92672">.</span>get(endpoint_config, <span style="color:#e6db74">:http</span>) <span style="color:#f92672">|&gt;</span> <span style="color:#a6e22e">Keyword</span><span style="color:#f92672">.</span>get(<span style="color:#e6db74">:port</span>)
+
+    <span style="color:#e6db74">&#34;http://</span><span style="color:#e6db74">#{</span>host<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">#{</span>port<span style="color:#e6db74">}</span><span style="color:#e6db74">/api/v1&#34;</span>
+  end
+end</code></pre></div>
+<p>Now we can launch our app (<code>mix phoenix.server</code>) and in another
+terminal do things like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-iex" data-lang="iex">iex(1)&gt; Calculon.Support.APICall.post!(&#34;/calculations&#34;, %{calculation: %{input: &#34;1 + 1&#34;}})
+%HTTPoison.Response{body: %{&#34;ok&#34; =&gt; true},
+headers: %{&#34;cache-control&#34; =&gt; &#34;max-age=0, private, must-revalidate&#34;,
+&#34;connection&#34; =&gt; &#34;keep-alive&#34;, &#34;content-length&#34; =&gt; &#34;11&#34;,
+&#34;content-type&#34; =&gt; &#34;application/json; charset=utf-8&#34;,
+&#34;date&#34; =&gt; &#34;Sun, 19 Apr 2015 20:24:49 GMT&#34;, &#34;server&#34; =&gt; &#34;Cowboy&#34;,
+   &#34;x-request-id&#34; =&gt; &#34;DkMB98DVLHafB7eWdXoS&#34;}, status_code: 201}</code></pre></div>
+<p>Note: By putting this code in <code>lib/calculon/support</code>, it will be
+available in all environments (test, development, production).  This
+makes it useful for manual testing in development mode.
+Alternatively, we could put it in <code>test/support</code>, but then we could
+only use it from within our test suite.</p>
+
+<h1 id="launching-the-server-during-tests">Launching the server during tests</h1>
+
+<p>If we use the APICall helper in our test code at this point, we&rsquo;ll get
+an error: <code>** (HTTPoison.Error) :econnrefused</code>.  That&rsquo;s because
+Phoenix does not enable the server portion of the application when
+it&rsquo;s run in the test environment.  Fortunately, it&rsquo;s not too hard to
+automate turning it on.</p>
+
+<p>Let&rsquo;s add a test helper to launch the API when we need it.  We&rsquo;ll put
+this code in the <code>test/support</code> directory because we don&rsquo;t really need
+it outside of our test code.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># test/support/helpers.ex</span>
+defmodule <span style="color:#a6e22e">Calculon.Support.Helpers</span> do
+  def launch_api do
+    <span style="color:#75715e"># set up config for serving</span>
+    endpoint_config <span style="color:#f92672">=</span>
+      <span style="color:#a6e22e">Application</span><span style="color:#f92672">.</span>get_env(<span style="color:#e6db74">:calculon</span>, <span style="color:#a6e22e">Calculon.Endpoint</span>)
+      <span style="color:#f92672">|&gt;</span> <span style="color:#a6e22e">Keyword</span><span style="color:#f92672">.</span>put(<span style="color:#e6db74">:server</span>, true)
+    <span style="color:#e6db74">:ok</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Application</span><span style="color:#f92672">.</span>put_env(<span style="color:#e6db74">:calculon</span>, <span style="color:#a6e22e">Calculon.Endpoint</span>, endpoint_config)
+
+    <span style="color:#75715e"># restart our application with serving enabled</span>
+    <span style="color:#e6db74">:ok</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Application</span><span style="color:#f92672">.</span>stop(<span style="color:#e6db74">:calculon</span>)
+    <span style="color:#e6db74">:ok</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">Application</span><span style="color:#f92672">.</span>start(<span style="color:#e6db74">:calculon</span>)
+  end
+end</code></pre></div>
+<h1 id="writing-integration-tests">Writing integration tests</h1>
+
+<p>We have all of the pieces now.  Let&rsquo;s write a test.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># test/integration/calculations_integration_test.exs</span>
+defmodule <span style="color:#a6e22e">CalculationsIntegrationTest</span> do
+  use <span style="color:#a6e22e">ExUnit.Case</span>
+
+  <span style="color:#75715e"># alias for convenience</span>
+  alias <span style="color:#a6e22e">Calculon.Support.APICall</span>
+
+  <span style="color:#75715e"># use the setup_all hook to make sure the API is</span>
+  <span style="color:#75715e"># serving content during tests</span>
+  setup_all do
+    <span style="color:#a6e22e">Calculon.Support.Helpers</span><span style="color:#f92672">.</span>launch_api
+  end
+
+  test <span style="color:#e6db74">&#34;POST /api/v1/calculations returns HTTP 201&#34;</span> do
+    response <span style="color:#f92672">=</span> <span style="color:#a6e22e">APICall</span><span style="color:#f92672">.</span>post!(<span style="color:#e6db74">&#34;/calculations&#34;</span>, %{<span style="color:#e6db74">calculation</span>: %{<span style="color:#e6db74">input</span>: <span style="color:#e6db74">&#34;1 + 1&#34;</span>}})
+    assert response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">201</span>
+  end
+end</code></pre></div>
+<p>We use the <code>setup_all</code>
+<a href="http://elixir-lang.org/docs/v1.0/ex_unit/ExUnit.Callbacks.html">ExUnit callback</a>
+to execute our helper that enables the API endpoints, and our HTTPoison
+helper to make the actual request.  The HTTPoison response object has
+a <code>status_code</code> property that we can use to validate the HTTP status
+code returned by the server.</p>
+
+<p>The test should pass.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ mix test test/integration
+.
+
+Finished in <span style="color:#ae81ff">0</span>.2 seconds <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.1s on load, <span style="color:#ae81ff">0</span>.1s on tests<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">1</span> tests, <span style="color:#ae81ff">0</span> failures
+
+Randomized with seed <span style="color:#ae81ff">170902</span></code></pre></div>
+<p>Now let&rsquo;s add some actual calculator functionality to Calculon using
+TDD.  We&rsquo;ll update our previous integration test to test for simple
+addition.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># test/integration/calculations_integration_test.exs</span>
+defmodule <span style="color:#a6e22e">CalculationsIntegrationTest</span> do
+  use <span style="color:#a6e22e">ExUnit.Case</span>
+
+  <span style="color:#75715e"># alias for convenience</span>
+  alias <span style="color:#a6e22e">Calculon.Support.APICall</span>
+
+  <span style="color:#75715e"># use the setup_all hook to make sure the API is</span>
+  <span style="color:#75715e"># serving content during tests</span>
+  setup_all do
+    <span style="color:#a6e22e">Calculon.Support.Helpers</span><span style="color:#f92672">.</span>launch_api
+  end
+
+  test <span style="color:#e6db74">&#34;POST /api/v1/calculations returns HTTP 201&#34;</span> do
+    response <span style="color:#f92672">=</span> <span style="color:#a6e22e">APICall</span><span style="color:#f92672">.</span>post!(<span style="color:#e6db74">&#34;/calculations&#34;</span>, %{<span style="color:#e6db74">calculation</span>: %{<span style="color:#e6db74">input</span>: <span style="color:#e6db74">&#34;1 + 1&#34;</span>}})
+    assert response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">201</span>
+  end
+
+  test <span style="color:#e6db74">&#34;simple addition&#34;</span> do
+    request <span style="color:#f92672">=</span> %{<span style="color:#e6db74">calculation</span>: %{<span style="color:#e6db74">input</span>: <span style="color:#e6db74">&#34;1 + 1&#34;</span>}}
+    response <span style="color:#f92672">=</span> <span style="color:#a6e22e">APICall</span><span style="color:#f92672">.</span>post!(<span style="color:#e6db74">&#34;/calculations&#34;</span>, request)
+
+    expected_response <span style="color:#f92672">=</span> %{<span style="color:#e6db74">calculation</span>: %{<span style="color:#e6db74">input</span>: <span style="color:#e6db74">&#34;1 + 1&#34;</span>, <span style="color:#e6db74">output</span>: <span style="color:#e6db74">&#34;2&#34;</span>}}
+    
+    assert response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">201</span>
+    assert response<span style="color:#f92672">.</span>body <span style="color:#f92672">==</span> expected_response
+  end
+end</code></pre></div>
+<p>This test should fail because we haven&rsquo;t built the
+corresponding functionality yet.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ mix test test/integration
+
+
+<span style="color:#ae81ff">1</span><span style="color:#f92672">)</span> test simple addition <span style="color:#f92672">(</span>CalculationsIntegrationTest<span style="color:#f92672">)</span>
+test/integration/calculations_integration_test.exs:19
+Assertion with <span style="color:#f92672">==</span> failed
+code: response.body<span style="color:#f92672">()</span> <span style="color:#f92672">==</span> expected_response
+lhs:  %<span style="color:#f92672">{</span>ok: true<span style="color:#f92672">}</span>
+rhs:  %<span style="color:#f92672">{</span>calculation: %<span style="color:#f92672">{</span>input: <span style="color:#e6db74">&#34;1 + 1&#34;</span>, output: <span style="color:#e6db74">&#34;2&#34;</span><span style="color:#f92672">}}</span>
+stacktrace:
+test/integration/calculations_integration_test.exs:26
+
+.
+
+Finished in <span style="color:#ae81ff">0</span>.3 seconds <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.1s on load, <span style="color:#ae81ff">0</span>.1s on tests<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">2</span> tests, <span style="color:#ae81ff">1</span> failures</code></pre></div>
+<p>Now we can update our controller to actually calculate output.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">def create(conn, params) do
+  input <span style="color:#f92672">=</span> params[<span style="color:#e6db74">&#34;calculation&#34;</span>][<span style="color:#e6db74">&#34;input&#34;</span>]
+  output <span style="color:#f92672">=</span> <span style="color:#a6e22e">Calculon.Calculator</span><span style="color:#f92672">.</span>eval(input)
+
+  conn
+  <span style="color:#f92672">|&gt;</span> put_status(<span style="color:#ae81ff">201</span>)
+  <span style="color:#f92672">|&gt;</span> json %{<span style="color:#e6db74">calculation</span>: %{<span style="color:#e6db74">input</span>: input, <span style="color:#e6db74">output</span>: <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">#{</span>output<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>}}
+end</code></pre></div>
+<p>The implementation of <code>Calculon.Calculator.eval</code> is included below.
+It&rsquo;s similar in functionality to
+<a href="http://elixir-lang.org/docs/v1.0/elixir/Code.html#eval_string/3"><code>Code.eval_string/3</code></a>,
+which evaluates arbitrary Elixir code strings, but it has heavy
+restrictions on the input for reasons of safety.</p>
+
+<p>Now the tests pass:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ mix test test/integration
+..
+
+Finished in <span style="color:#ae81ff">0</span>.2 seconds <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.1s on load, <span style="color:#ae81ff">0</span>.1s on tests<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">2</span> tests, <span style="color:#ae81ff">0</span> failures
+
+Randomized with seed <span style="color:#ae81ff">777178</span></code></pre></div>
+<p>The controller implementation doesn&rsquo;t do any error checking, so let&rsquo;s
+add a test for that.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># in test/integration/calculations_integration_test.exs</span>
+test <span style="color:#e6db74">&#34;invalid input returns HTTP 400&#34;</span> do
+  response <span style="color:#f92672">=</span> <span style="color:#a6e22e">APICall</span><span style="color:#f92672">.</span>post!(<span style="color:#e6db74">&#34;/calculations&#34;</span>, %{<span style="color:#e6db74">calculation</span>: %{<span style="color:#e6db74">input</span>:
+<span style="color:#e6db74">&#34;&#34;</span>}})
+  assert response<span style="color:#f92672">.</span>status_code <span style="color:#f92672">==</span> <span style="color:#ae81ff">400</span>
+end </code></pre></div>
+<p>This test fails because the controller responds with an HTTP status
+code of 201 even though it failed to perform any calculation.  We&rsquo;d
+like to let an API consumer know that they are providing invalid
+input, so let&rsquo;s refactor the controller to return a 400 error if the
+calculator returns <code>nil</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#75715e"># web/controllers/calculations_controller.ex</span>
+defmodule <span style="color:#a6e22e">Calculon.CalculationsController</span> do
+  use <span style="color:#a6e22e">Phoenix.Controller</span>
+
+  plug <span style="color:#e6db74">:action</span>
+
+  def create(conn, params) do
+    input <span style="color:#f92672">=</span> params[<span style="color:#e6db74">&#34;calculation&#34;</span>][<span style="color:#e6db74">&#34;input&#34;</span>]
+    output <span style="color:#f92672">=</span> <span style="color:#a6e22e">Calculon.Calculator</span><span style="color:#f92672">.</span>eval(input)
+
+    if output do
+      conn
+      <span style="color:#f92672">|&gt;</span> put_status(<span style="color:#ae81ff">201</span>)
+      <span style="color:#f92672">|&gt;</span> json %{<span style="color:#e6db74">calculation</span>: %{<span style="color:#e6db74">input</span>: input, <span style="color:#e6db74">output</span>: <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">#{</span>output<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>}}
+    else
+      conn
+      <span style="color:#f92672">|&gt;</span> put_status(<span style="color:#ae81ff">400</span>)
+      <span style="color:#f92672">|&gt;</span> json %{<span style="color:#e6db74">error</span>: %{<span style="color:#e6db74">input</span>: [<span style="color:#e6db74">&#34;unable to parse&#34;</span>]}}
+    end
+  end
+end</code></pre></div>
+<p>Now our tests pass again:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ mix test test/integration
+...
+
+Finished in <span style="color:#ae81ff">0</span>.3 seconds <span style="color:#f92672">(</span><span style="color:#ae81ff">0</span>.1s on load, <span style="color:#ae81ff">0</span>.1s on tests<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">3</span> tests, <span style="color:#ae81ff">0</span> failures
+
+Randomized with seed <span style="color:#ae81ff">826740</span></code></pre></div>
+<h1 id="conclusion">Conclusion</h1>
+
+<p>These are the basic building blocks that you need in order to start
+doing integration testing for your Phoenix app. It mostly boils down
+to using something like HTTPoison to automate your HTTP requests and
+adding a setup callback that ensures your application is serving
+content during testing.  The code for Calculon is on my github:
+<a href="https://github.com/dantswain/calculon">https://github.com/dantswain/calculon</a>.</p>
+
+<h2 id="phoenix-v0-10-0-and-earlier">Phoenix v0.10.0 and earlier</h2>
+
+<p>In Phoenix v0.10.0 and before, you may need to add the following to your
+<code>launch_api</code> helper:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir"><span style="color:#a6e22e">Application</span><span style="color:#f92672">.</span>put_env <span style="color:#e6db74">:phoenix</span>, <span style="color:#e6db74">:serve_endpoints</span>, true</code></pre></div>
+<p>I&rsquo;ve gotten it to work with v0.9.0 and v0.10.0.  If you have trouble,
+feel free to leave a comment below and I&rsquo;ll try to help.</p>
+
+<h2 id="calculator-code">Calculator code</h2>
+
+<p>This is by no means bullet proof, or even probably &ldquo;good&rdquo;. The basic
+idea is to parse the code into an
+<a href="http://elixir-lang.org/getting-started/meta/quote-and-unquote.html">AST</a>
+and then check the form of the AST to make sure that the input is only
+doing one of a small list of allowed operations. My initial thought
+when I started writing this was to just use
+<a href="http://elixir-lang.org/docs/v1.0/elixir/Code.html#eval_string/3"><code>Code.eval_string/3</code></a>,
+with the massive caveat that that would be <strong>very</strong> unsafe.  I just
+couldn&rsquo;t do it.</p>
+
+<p>In theory, this could be extended with recursion to allow more complex
+operations.  This is also might not be a great solution for a
+production app because the parsing and validation might be relatively
+heavy on the CPU.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">Calculon.Calculator</span> do
+  def eval(string) do
+    ast <span style="color:#f92672">=</span> <span style="color:#a6e22e">Code</span><span style="color:#f92672">.</span>string_to_quoted!(string)
+    if is_simple_arithmetic?(ast) do
+      {result, []} <span style="color:#f92672">=</span> <span style="color:#a6e22e">Code</span><span style="color:#f92672">.</span>eval_quoted(ast)
+      result
+    else
+      nil
+    end
+  end
+
+  def is_simple_arithmetic?({op, _, args}) do
+    <span style="color:#a6e22e">Enum</span><span style="color:#f92672">.</span>member?([<span style="color:#e6db74">:+</span>, <span style="color:#e6db74">:-</span>, <span style="color:#e6db74">:*</span>, <span style="color:#e6db74">:/</span>], op) <span style="color:#f92672">&amp;&amp;</span> bare_args?(args) 
+  end
+  def is_simple_arithmetic?(_) do
+  end
+
+  def bare_args?([arg1, arg2]) when is_number(arg1) and is_number(arg2) do
+    true
+  end
+  def bare_args?(_) do
+    false
+  end
+end</code></pre></div>
+
+
+
+
+
+
+
+
+    </section>
+
+
+  <footer class="post-footer">
+
+
+    
+
+    
+
+
+
+
+
+
+
+
+
+<section class="author">
+  <h4><a href="https://dantswain.github.io/">Dan Swain</a></h4>
+  
+  <p>Fellow at simpli.fi. Robotics Ph.D. I like building things. </p>
+  
+  <div class="author-meta">
+    <span class="author-location icon-location">Rochester, NY</span>
+    <span class="author-link icon-link"><a href="https://dantswain.com">https://dantswain.com</a></span>
+  </div>
+</section>
+
+
+
+
+    
+<section class="share">
+  <h4>Share this post</h4>
+  <a class="icon-twitter" style="font-size: 1.4em" href="https://twitter.com/share?text=Integration%20Testing%20a%20JSON%20API%20in%20Phoenix&nbsp;-&nbsp;Dan%27s%20Blog&amp;url=https%3a%2f%2fdantswain.github.io%2f2015%2f04%2f19%2fintegration-testing-a-json-api-in-phoenix%2f"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+      <span class="hidden">Twitter</span>
+  </a>
+  <a class="icon-facebook" style="font-size: 1.4em" href="https://www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fdantswain.github.io%2f2015%2f04%2f19%2fintegration-testing-a-json-api-in-phoenix%2f"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+      <span class="hidden">Facebook</span>
+  </a>
+  <a class="icon-pinterest" style="font-size: 1.4em" href="http://pinterest.com/pin/create/button/?url=https%3a%2f%2fdantswain.github.io%2f2015%2f04%2f19%2fintegration-testing-a-json-api-in-phoenix%2f&amp;description=Integration%20Testing%20a%20JSON%20API%20in%20Phoenix"
+      onclick="window.open(this.href, 'pinterest-share','width=580,height=296');return false;">
+      <span class="hidden">Pinterest</span>
+  </a>
+  <a class="icon-google-plus" style="font-size: 1.4em" href="https://plus.google.com/share?url=https%3a%2f%2fdantswain.github.io%2f2015%2f04%2f19%2fintegration-testing-a-json-api-in-phoenix%2f"
+     onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+      <span class="hidden">Google+</span>
+  </a>
+</section>
+
+
+
+    
+
+<div id="disqus_thread"></div>
+<script>
+
+
+
+
+var disqus_config = function () {
+this.page.url = "https:\/\/dantswain.github.io\/2015\/04\/19\/integration-testing-a-json-api-in-phoenix\/";  
+this.page.identifier = "https:\/\/dantswain.github.io\/2015\/04\/19\/integration-testing-a-json-api-in-phoenix\/"; 
+};
+
+(function() { 
+var d = document, s = d.createElement('script');
+s.src = 'https://dantswainblog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+
+
+
+
+  </footer>
+</article>
+
+</main>
+
+<aside class="read-next">
+  
+      <a class="read-next-story" style="no-cover" href="/2015/05/02/generating-an-erlang-sys.config-from-an-elixir-config.exs/">
+          <section class="post">
+              <h2>Generating an Erlang sys.config from an Elixir config.exs</h2>
+              
+          </section>
+      </a>
+  
+  
+      <a class="read-next-story prev" style="no-cover" href="/2015/01/06/storing-state-in-elixir-with-processes/">
+          <section class="post">
+              <h2>Storing state in Elixir with processes</h2>
+          </section>
+      </a>
+  
+</aside>
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">Dan&#39;s Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="http://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/vjeantet/hugo-theme-casper">Casper</a> theme</section>
+        
+    </footer>
+    </div>
+    
+    
+</body>
+</html>
+

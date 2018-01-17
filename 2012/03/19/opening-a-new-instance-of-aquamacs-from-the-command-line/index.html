@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    
+    
+        <meta name="twitter:card" content="summary"/>
+    
+
+
+
+<meta name="twitter:title" content="Opening a new instance of Aquamacs from the command line"/>
+<meta name="twitter:description" content=""/>
+<meta name="twitter:site" content="@dantswain"/>
+
+
+
+  	<meta property="og:title" content="Opening a new instance of Aquamacs from the command line &middot; Dan&#39;s Blog" />
+  	<meta property="og:site_name" content="Dan&#39;s Blog" />
+  	<meta property="og:url" content="https://dantswain.github.io/2012/03/19/opening-a-new-instance-of-aquamacs-from-the-command-line/" />
+
+    
+        
+            <meta property="og:image" content="/images/flockBack.png"/>
+        
+    
+
+    
+    <meta property="og:description" content="" />
+  	<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2012-03-19T00:00:00Z" />
+
+    
+    <meta property="article:tag" content="shell scripts" />
+    
+    <meta property="article:tag" content="os x" />
+    
+    <meta property="article:tag" content="open" />
+    
+    
+
+    <title>Opening a new instance of Aquamacs from the command line &middot; Dan&#39;s Blog</title>
+
+    
+    <meta name="description" content="The short answer: #!/bin/bash open -na Aquamacs $*  The long answer: If you&amp;rsquo;ve used the OS X command line for any length of time, you&amp;rsquo;ve probably (h" />
+    
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+
+    <link rel="stylesheet" type="text/css" href="/css/screen.css" />
+    
+
+    
+
+    
+
+    
+      
+          <link href="/index.xml" rel="alternate" type="application/rss+xml" title="Dan&#39;s Blog" />
+      
+      
+    
+    <meta name="generator" content="Hugo 0.32.4" />
+
+    <link rel="canonical" href="https://dantswain.github.io/2012/03/19/opening-a-new-instance-of-aquamacs-from-the-command-line/" />
+
+    
+      
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": 
+    },
+    "author": {
+        "@type": "Person",
+        "name": ,
+        
+        "url": https://dantswain.com,
+        "sameAs": [
+            
+            
+             
+             
+             
+             
+             
+            
+        ],
+        "description": Fellow at simpli.fi. Robotics Ph.D. I like building things. 
+        
+    },
+    "headline": Opening a new instance of Aquamacs from the command line,
+    "name": Opening a new instance of Aquamacs from the command line,
+    "wordCount": 409,
+    "timeRequired": "PT2M",
+    "inLanguage": {
+      "@type": "Language",
+      "alternateName": en
+    },
+    "url": https://dantswain.github.io/2012/03/19/opening-a-new-instance-of-aquamacs-from-the-command-line/,
+    "datePublished": 2012-03-19T00:00Z,
+    "dateModified": 2012-03-19T00:00Z,
+    
+    "keywords": shell scripts, os x, open,
+    "description": ,
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": https://dantswain.github.io/2012/03/19/opening-a-new-instance-of-aquamacs-from-the-command-line/
+    }
+}
+    </script>
+    
+
+
+    
+
+    
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-30160681-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+    
+
+    
+</head>
+<body class="nav-open">
+
+ <div class="site-wrapper">
+
+  
+      <ul class="nav">
+        
+        
+        
+          
+            <li class="nav-item">
+              <a href="/about">About me</a>
+            </li>
+        
+          
+            <li class="nav-item">
+              <a href="/">Home</a>
+            </li>
+        
+        
+      </ul>
+
+
+
+
+
+
+
+<header class="main-header post-head no-cover">
+    <nav class="main-nav overlay clearfix">
+
+
+      
+    </nav>
+
+    
+
+
+</header>
+
+
+
+<main class="content" role="main">
+
+
+
+
+  <article class="post post">
+    <header class="post-header">
+      <nav class="breadcrumb">
+        
+        
+        
+        
+        
+        
+        
+      </nav>
+
+
+        <h1 class="post-title">Opening a new instance of Aquamacs from the command line</h1>
+        <small></small>
+
+        <section class="post-meta">
+        
+          <time class="post-date" datetime="2012-03-19T00:00:00Z">
+            Mar 19, 2012
+          </time>
+        
+         
+          <span class="post-tag small"><a href="https://dantswain.github.io//tags/shell-scripts/">#shell scripts</a></span>
+         
+          <span class="post-tag small"><a href="https://dantswain.github.io//tags/os-x/">#os x</a></span>
+         
+          <span class="post-tag small"><a href="https://dantswain.github.io//tags/open/">#open</a></span>
+         
+        </section>
+    </header>
+
+    <section class="post-content">
+
+
+
+
+<h3 id="the-short-answer">The short answer:</h3>
+
+<pre><code>#!/bin/bash
+open -na Aquamacs $*
+</code></pre>
+
+<h3 id="the-long-answer">The long answer:</h3>
+
+<p>If you&rsquo;ve used the OS X command line for any length of time, you&rsquo;ve probably (hopefully) come across the <code>open</code> command.  Its job is (shockingly enough) opening files and applications using Finder.  It works for files:</p>
+
+<pre><code>$ open index.html
+</code></pre>
+
+<p>opens <code>index.html</code> in your browser.  It also works for applications:</p>
+
+<pre><code>$ open -a Mail
+</code></pre>
+
+<p>opens Mail.app.  It also works for opening files with an application:</p>
+
+<pre><code>$ open -a Aquamacs config/routes.rb
+</code></pre>
+
+<p>opens <code>config/routes.rb</code> in <a href="http://aquamacs.org">Aquamacs</a>.</p>
+
+<!-- more -->
+
+<p>In fact, I often find myself wanting to open a file in Aquamacs from the command line.  It&rsquo;s not hard at all to find and/or figure a shell script to do this:</p>
+
+<pre><code>#!/bin/bash
+open -a Aquamacs $*
+</code></pre>
+
+<p>That is, if you save that script somewhere on your <code>PATH</code> as <code>amacs</code> and <code>chmod +x amacs</code>, then <code>amacs config/routes.rb</code> opens up <code>config/routes.rb</code> in Aquamacs.  Using <code>$*</code> makes it flexible enough to handle multiple files.</p>
+
+<p>Once Aquamacs is open, additional executions of <code>open -a Aquamacs</code> will cause one of two things to happen:</p>
+
+<ul>
+<li><p>If no additional arguments are provided, then the application is brought to the front of the window manager as if you had clicked on its icon in the Dock, or</p></li>
+
+<li><p>If you provide a file name, i.e., <code>open -a Aquamacs Gemfile</code>, then that file is opened up in the application as if you had opened it through the application&rsquo;s menu.</p></li>
+</ul>
+
+<p>Most of the time, this is the behavior that you want.  Most people who use OS X are accustomed to it reusing existing instances of an application.  There are, however, some perfectly reasonable circumstances for which you might want a <em>new</em> instance of the application to open.  For example, I typically have at least a couple projects open in Aquamacs: a Rails app, a Latex document, a blog post, etc.  Personally, I like to be able to <code>C-x C-c</code> occasionally and restart with a blank slate of buffers.  I also like to be able to close one project without having to <code>C-x C-f</code> each of the buffers independently.</p>
+
+<p>Happily, it&rsquo;s incredibly easy to modify the shell script above to handle this case using open&rsquo;s <code>-n</code>option:</p>
+
+<pre><code>#!/bin/bash
+open -na Aquamacs $*
+</code></pre>
+
+<p>Save this version to another file called <code>namacs</code> and run <code>namacs foo.tex</code> to open <code>foo.tex</code> in a new instance of Aquamacs.</p>
+
+<p>Note:</p>
+
+<ul>
+<li>The argument ordering matters.  <code>open -an</code> does <em>not</em> work.</li>
+<li>This works for pretty much any appliation.  I&rsquo;m just using Aquamacs as an example.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+    </section>
+
+
+  <footer class="post-footer">
+
+
+    
+
+    
+
+
+
+
+
+
+
+
+
+<section class="author">
+  <h4><a href="https://dantswain.github.io/">Dan Swain</a></h4>
+  
+  <p>Fellow at simpli.fi. Robotics Ph.D. I like building things. </p>
+  
+  <div class="author-meta">
+    <span class="author-location icon-location">Rochester, NY</span>
+    <span class="author-link icon-link"><a href="https://dantswain.com">https://dantswain.com</a></span>
+  </div>
+</section>
+
+
+
+
+    
+<section class="share">
+  <h4>Share this post</h4>
+  <a class="icon-twitter" style="font-size: 1.4em" href="https://twitter.com/share?text=Opening%20a%20new%20instance%20of%20Aquamacs%20from%20the%20command%20line&nbsp;-&nbsp;Dan%27s%20Blog&amp;url=https%3a%2f%2fdantswain.github.io%2f2012%2f03%2f19%2fopening-a-new-instance-of-aquamacs-from-the-command-line%2f"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+      <span class="hidden">Twitter</span>
+  </a>
+  <a class="icon-facebook" style="font-size: 1.4em" href="https://www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fdantswain.github.io%2f2012%2f03%2f19%2fopening-a-new-instance-of-aquamacs-from-the-command-line%2f"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+      <span class="hidden">Facebook</span>
+  </a>
+  <a class="icon-pinterest" style="font-size: 1.4em" href="http://pinterest.com/pin/create/button/?url=https%3a%2f%2fdantswain.github.io%2f2012%2f03%2f19%2fopening-a-new-instance-of-aquamacs-from-the-command-line%2f&amp;description=Opening%20a%20new%20instance%20of%20Aquamacs%20from%20the%20command%20line"
+      onclick="window.open(this.href, 'pinterest-share','width=580,height=296');return false;">
+      <span class="hidden">Pinterest</span>
+  </a>
+  <a class="icon-google-plus" style="font-size: 1.4em" href="https://plus.google.com/share?url=https%3a%2f%2fdantswain.github.io%2f2012%2f03%2f19%2fopening-a-new-instance-of-aquamacs-from-the-command-line%2f"
+     onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+      <span class="hidden">Google+</span>
+  </a>
+</section>
+
+
+
+    
+
+<div id="disqus_thread"></div>
+<script>
+
+
+
+
+var disqus_config = function () {
+this.page.url = "https:\/\/dantswain.github.io\/2012\/03\/19\/opening-a-new-instance-of-aquamacs-from-the-command-line\/";  
+this.page.identifier = "https:\/\/dantswain.github.io\/2012\/03\/19\/opening-a-new-instance-of-aquamacs-from-the-command-line\/"; 
+};
+
+(function() { 
+var d = document, s = d.createElement('script');
+s.src = 'https://dantswainblog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+
+
+
+
+  </footer>
+</article>
+
+</main>
+
+<aside class="read-next">
+  
+      <a class="read-next-story" style="no-cover" href="/2012/10/05/erlang-first-element-in-a-list-that-matches-some-condition/">
+          <section class="post">
+              <h2>Erlang: First element in a list that matches some condition</h2>
+              
+          </section>
+      </a>
+  
+  
+</aside>
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">Dan&#39;s Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="http://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/vjeantet/hugo-theme-casper">Casper</a> theme</section>
+        
+    </footer>
+    </div>
+    
+    
+</body>
+</html>
+

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    
+    
+        <meta name="twitter:card" content="summary"/>
+    
+
+
+
+<meta name="twitter:title" content="Storing state in Elixir with processes"/>
+<meta name="twitter:description" content=""/>
+<meta name="twitter:site" content="@dantswain"/>
+
+
+
+  	<meta property="og:title" content="Storing state in Elixir with processes &middot; Dan&#39;s Blog" />
+  	<meta property="og:site_name" content="Dan&#39;s Blog" />
+  	<meta property="og:url" content="https://dantswain.github.io/2015/01/06/storing-state-in-elixir-with-processes/" />
+
+    
+        
+            <meta property="og:image" content="/images/flockBack.png"/>
+        
+    
+
+    
+    <meta property="og:description" content="" />
+  	<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2015-01-06T00:00:00Z" />
+
+    
+    
+
+    <title>Storing state in Elixir with processes &middot; Dan&#39;s Blog</title>
+
+    
+    <meta name="description" content="I&amp;rsquo;ve been getting into Elixir lately. I&amp;rsquo;m still learning, and one thing that helps me learn new languages is to take a problem I&amp;rsquo;ve solved in " />
+    
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+
+    <link rel="stylesheet" type="text/css" href="/css/screen.css" />
+    
+
+    
+
+    
+
+    
+      
+          <link href="/index.xml" rel="alternate" type="application/rss+xml" title="Dan&#39;s Blog" />
+      
+      
+    
+    <meta name="generator" content="Hugo 0.32.4" />
+
+    <link rel="canonical" href="https://dantswain.github.io/2015/01/06/storing-state-in-elixir-with-processes/" />
+
+    
+      
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": 
+    },
+    "author": {
+        "@type": "Person",
+        "name": ,
+        
+        "url": https://dantswain.com,
+        "sameAs": [
+            
+            
+             
+             
+             
+             
+             
+            
+        ],
+        "description": Fellow at simpli.fi. Robotics Ph.D. I like building things. 
+        
+    },
+    "headline": Storing state in Elixir with processes,
+    "name": Storing state in Elixir with processes,
+    "wordCount": 2231,
+    "timeRequired": "PT11M",
+    "inLanguage": {
+      "@type": "Language",
+      "alternateName": en
+    },
+    "url": https://dantswain.github.io/2015/01/06/storing-state-in-elixir-with-processes/,
+    "datePublished": 2015-01-06T00:00Z,
+    "dateModified": 2015-01-06T00:00Z,
+    
+    
+    "description": ,
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": https://dantswain.github.io/2015/01/06/storing-state-in-elixir-with-processes/
+    }
+}
+    </script>
+    
+
+
+    
+
+    
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-30160681-1', 'auto');
+      ga('send', 'pageview');
+
+    </script>
+    
+
+    
+</head>
+<body class="nav-open">
+
+ <div class="site-wrapper">
+
+  
+      <ul class="nav">
+        
+        
+        
+          
+            <li class="nav-item">
+              <a href="/about">About me</a>
+            </li>
+        
+          
+            <li class="nav-item">
+              <a href="/">Home</a>
+            </li>
+        
+        
+      </ul>
+
+
+
+
+
+
+
+<header class="main-header post-head no-cover">
+    <nav class="main-nav overlay clearfix">
+
+
+      
+    </nav>
+
+    
+
+
+</header>
+
+
+
+<main class="content" role="main">
+
+
+
+
+  <article class="post post">
+    <header class="post-header">
+      <nav class="breadcrumb">
+        
+        
+        
+        
+        
+        
+        
+      </nav>
+
+
+        <h1 class="post-title">Storing state in Elixir with processes</h1>
+        <small></small>
+
+        <section class="post-meta">
+        
+          <time class="post-date" datetime="2015-01-06T00:00:00Z">
+            Jan 6, 2015
+          </time>
+        
+         
+        </section>
+    </header>
+
+    <section class="post-content">
+
+
+
+
+<p>I&rsquo;ve been getting into <a href="http://elixir-lang.org">Elixir</a> lately. I&rsquo;m still
+learning, and one thing that helps me learn new languages is to take a
+problem I&rsquo;ve solved in another language and solve it in the new language.
+A few months ago I wrote about
+<a href="/blog/2014/09/27/storing-state-in-erlang-with-processes/">storing state in erlang with processes</a>
+and I thought it would be an interesting exercise to convert that
+discussion to Elixir.</p>
+
+<p>I&rsquo;ll start out with a solution that&rsquo;s too simple to be useful.
+Then, by adding functionality and refactoring,
+show that a design pattern emerges that can be abstracted away from our
+implementation details.  In this case, that pattern is a use-case for
+<a href="http://elixir-lang.org/docs/v1.0/elixir/GenServer.html">GenServer</a> or
+<a href="http://elixir-lang.org/docs/v1.0/elixir/Agent.html">Agent</a>, and I&rsquo;ll
+show how we can solve this problem using those tools.</p>
+
+<h2 id="state">State</h2>
+
+<p>State is how we make programs do non-trivial things. A
+video game&rsquo;s states might include the position of the player, or a
+count of the number of bad guys that have been defeated.  In most
+programming languages, we could
+count dead badguys by assigning the count to a variable and then updating
+that value each time another bad guy is defeated.  Elixir, however, doesn&rsquo;t
+allow us to keep around the value of a variable without actually carrying
+around a reference to that variable, which would get very cumbersome.
+So how do we keep track of state in Elixir?  The answer is by using
+processes.</p>
+
+<h2 id="state-is-easy-in-object-oriented-languages">State is easy in object-oriented languages</h2>
+
+<p>We&rsquo;ll use an example of a counter throughout the rest of this post.  By a counter,
+I just mean a simple piece of code that&rsquo;s capable of keeping a count value and
+provides an API to increment and/or access the value of the count.  This is a
+very simple example of <em>state</em>; the state of the counter is the value of the
+count.</p>
+
+<p>Object-oriented languages make it really easy and natural to store state in
+class instance variables.  For example, to implement a simple counter in
+Ruby we could do something like this.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby"><span style="color:#75715e"># a simple object-oriented counter in Ruby</span>
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Counter</span>
+  <span style="color:#66d9ef">def</span> <span style="color:#a6e22e"></span><span style="color:#f92672"></span><span style="color:#a6e22e">initialize</span>
+    @count <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+  <span style="color:#f92672"></span><span style="color:#66d9ef">end</span>
+
+  <span style="color:#66d9ef">def</span> <span style="color:#a6e22e"></span><span style="color:#f92672"></span><span style="color:#a6e22e">click</span>
+    @count <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+  <span style="color:#f92672"></span><span style="color:#66d9ef">end</span>
+<span style="color:#66d9ef">end</span>
+
+c <span style="color:#f92672">=</span> <span style="color:#66d9ef">Counter</span><span style="color:#f92672">.</span>new
+c<span style="color:#f92672">.</span>click <span style="color:#75715e"># =&gt; @count is now 1</span>
+c<span style="color:#f92672">.</span>click <span style="color:#75715e"># =&gt; @count is now 2</span></code></pre></div>
+<p><code>@count</code> is an instance variable of the <code>Counter</code> class.  When we create
+a new instance of the <code>Counter</code> class by calling <code>Counter.new</code>, <code>@count</code>
+gets initialized to a value of 0 in the constructor (<code>initialize</code>).   Each
+time we call the <code>click</code> method, the value of <code>@count</code> is incremented by 1.
+<code>@count</code> holds the <em>state</em> of the counter.  We can easily create multiple counters,
+each with its own independent state.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">c1 <span style="color:#f92672">=</span> <span style="color:#66d9ef">Counter</span><span style="color:#f92672">.</span>new
+c2 <span style="color:#f92672">=</span> <span style="color:#66d9ef">Counter</span><span style="color:#f92672">.</span>new
+c1<span style="color:#f92672">.</span>click <span style="color:#75715e"># =&gt; 1</span>
+c1<span style="color:#f92672">.</span>click <span style="color:#75715e"># =&gt; 2</span>
+c2<span style="color:#f92672">.</span>click <span style="color:#75715e"># =&gt; 1</span></code></pre></div>
+<p>In Elixir, we COULD do the following.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">Counter</span> do
+  def new do
+    <span style="color:#ae81ff">0</span>
+  end
+
+  def click(counter) do
+    counter <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+  end
+end
+
+c <span style="color:#f92672">=</span> <span style="color:#a6e22e">Counter</span><span style="color:#f92672">.</span>new       <span style="color:#75715e"># c = 0</span>
+c <span style="color:#f92672">=</span> <span style="color:#a6e22e">Counter</span><span style="color:#f92672">.</span>click(c)  <span style="color:#75715e"># c = 1</span>
+c <span style="color:#f92672">=</span> <span style="color:#a6e22e">Counter</span><span style="color:#f92672">.</span>click(c)  <span style="color:#75715e"># c = 2</span></code></pre></div>
+<p>That is, we could just keep using the count value.  This has some obvious
+limitations.  What if we want more than one process to be able to
+increment the counter?  Each process would have to know the counter&rsquo;s value,
+and keeping them all consistent would be very cumbersome.</p>
+
+<h2 id="recursion-and-state">Recursion and state</h2>
+
+<p>So how do we keep state in Elixir?  We can get part of the way there using
+recursion by passing state from the intial function call to the next and
+so on.  Here is an example of a counter in Elixir that prints out the value
+as it increments with each recursive function call.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">LoopCounter</span> do
+  def go, <span style="color:#e6db74">do</span>: go(<span style="color:#ae81ff">0</span>)
+
+  defp go(n) do
+    <span style="color:#a6e22e">IO</span><span style="color:#f92672">.</span>puts(<span style="color:#e6db74">&#34;n is </span><span style="color:#e6db74">#{</span>n<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+    <span style="color:#75715e"># just to make sure this doesn&#39;t blow up our terminal</span>
+    <span style="color:#e6db74">:timer</span><span style="color:#f92672">.</span>sleep(<span style="color:#ae81ff">1000</span>)
+    go(n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+  end
+end</code></pre></div>
+<p>Running this code from the iex shell will take over the shell
+because the function <code>LoopCounter.go</code> never returns.  You can
+either exit the shell with the usual Control-g q or kill
+the job and connect to a new local shell with Control-g followed
+by k (kill the job), s (start a new shell), c (connect to the new
+shell).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-iex" data-lang="iex">iex(1)&gt; c(&#34;loop_counter.ex&#34;)
+[LoopCounter]
+iex(2)&gt; LoopCounter.go
+n is 0
+n is 1
+n is 2
+n is 3
+
+User switch command
+--&gt; k
+--&gt; s
+--&gt; c</code></pre></div>
+<p>In <code>LoopCounter</code>, we use the input parameter <code>n</code> to the <code>go/1</code> function
+to keep track of our state, and we increment it by recursively calling
+the same function with <code>n + 1</code> as the parameter for the next call.  The
+fact that we&rsquo;re able to increment the value means that we are keeping
+track of the counter&rsquo;s state.  It&rsquo;s just not very useful at this point
+because the recursive call loop completely takes over the current
+Elixir process.</p>
+
+<p>We could use <a href="http://elixir-lang.org/docs/v1.0/elixir/Kernel.html#spawn/1">Kernel.spawn/1</a>
+to break our counter loop away from the main process (our shell) and
+<a href="http://elixir-lang.org/docs/v1.0/elixir/Process.html#exit/2">Process.exit/2</a> to
+stop it.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-iex" data-lang="iex">iex(1)&gt; pid = spawn(&amp;LoopCounter.go/0)
+n is 0
+# PID&lt;0.55.0&gt;
+n is 1
+n is 2
+n is 3
+n is 4
+n is 5
+n is 6
+n is 7
+iex(2)&gt; Process.exit(pid, :exit)
+true</code></pre></div>
+<p>We&rsquo;ve got control of our shell back, but we still have no way to
+control the counter or to get at its current value programmatically.</p>
+
+<h2 id="controlling-and-querying-state-with-messages">Controlling and querying state with messages</h2>
+
+<p>We use messages to communicate between processes in Elixir.  The Elixir
+<a href="http://elixir-lang.org/getting-started/introduction.html">Getting Started</a>
+guide&rsquo;s section on <a href="http://elixir-lang.org/getting-started/processes.html">processes</a>
+does a good job of explaining message handling in Elixir (and even has a section
+that&rsquo;s similar to this post).</p>
+
+<p>Here is an example that adds a click message to our counter.  We can use
+the click message to increment the counter&rsquo;s value
+and send the updated value back to the calling process
+as a return message.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">SignalCounter</span> do
+  def go do
+    loop(<span style="color:#ae81ff">0</span>)
+  end
+
+  defp loop(n) do
+    receive do
+      {<span style="color:#e6db74">:click</span>, from} <span style="color:#f92672">-&gt;</span>
+        send(from, n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+        loop(n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+    end
+  end
+end</code></pre></div>
+<p>We can create a counter using spawn and send messages to it. The counter
+expects messages to be tuples: <code>{:click, from}</code>  where <code>from</code> should be
+the pid of the caller so we can send back the state as a return message.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-iex" data-lang="iex">iex(1)&gt; c(&#34;signal_counter.ex&#34;)
+[SignalCounter]
+iex(2)&gt; pid = spawn(&amp;SignalCounter.go/0)
+# PID&lt;0.61.0&gt;
+iex(3)&gt; send(pid, {:click, self})
+{:click, #PID&lt;0.53.0&gt;}
+iex(4)&gt; receive do x -&gt; x end
+1
+iex(5)&gt; send(pid, {:click, self})
+{:click, #PID&lt;0.53.0&gt;}
+iex(6)&gt; receive do x -&gt; x end</code></pre></div>
+<p>This is still a little messy because the caller (in this case, us via
+the shell) has to know the message semantics and perform all of the
+message receiving.  We can simplify this quite a bit by including the
+message handling in the module and providing a simple API to the outside
+world.  Here&rsquo;s a modified counter that does this, as well as adding
+a few new messages.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">Counter</span> do
+  <span style="color:#75715e"># API methods</span>
+  def new do
+    spawn fn <span style="color:#f92672">-&gt;</span> loop(<span style="color:#ae81ff">0</span>) end
+  end
+
+  def set(pid, value) do
+    send(pid, {<span style="color:#e6db74">:set</span>, value, self()})
+    receive do x <span style="color:#f92672">-&gt;</span> x end
+  end
+
+  def click(pid) do
+    send(pid, {<span style="color:#e6db74">:click</span>, self()})
+    receive do x <span style="color:#f92672">-&gt;</span> x end
+  end
+
+  def get(pid) do
+    send(pid, {<span style="color:#e6db74">:get</span>, self()})
+    receive do x <span style="color:#f92672">-&gt;</span> x end
+  end
+
+  <span style="color:#75715e"># Counter implementation</span>
+  defp loop(n) do
+    receive do
+      {<span style="color:#e6db74">:click</span>, from} <span style="color:#f92672">-&gt;</span>
+        send(from, n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+        loop(n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+      {<span style="color:#e6db74">:get</span>, from} <span style="color:#f92672">-&gt;</span>
+        send(from, n)
+        loop(n)
+      {<span style="color:#e6db74">:set</span>, value, from} <span style="color:#f92672">-&gt;</span>
+        send(from, <span style="color:#e6db74">:ok</span>)
+        loop(value)
+    end
+  end
+end</code></pre></div>
+<p>This makes the API much more intuitive by adding methods like <code>Counter.click/0</code>.
+Note that <code>Counter.new/0</code> returns the pid of the underlying process and that
+we pass this pid to subsequent function calls.  That&rsquo;s because we&rsquo;re using
+that process to hold the state of the counter!  This is a very common
+Erlang and Elixir idiom.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-iex" data-lang="iex">iex(1)&gt; c(&#34;counter.ex&#34;)
+[Counter]
+iex(2)&gt; c = Counter.new
+# PID&lt;0.62.0&gt;
+iex(3)&gt; Counter.click(c)
+1
+iex(4)&gt; Counter.set(c, 42)
+:ok
+iex(5)&gt; Counter.get(c)
+42
+iex(6)&gt; c2 = Counter.new
+# PID&lt;0.67.0&gt;
+iex(7)&gt; Counter.get(c2)
+0</code></pre></div>
+<p>Note that the Counter API functions use <code>self/0</code> to get the PID of the <em>caller</em>.
+ In Elixir, <code>self/0</code>
+always returns the pid of the current process (it&rsquo;s actually shorthand for
+<a href="http://elixir-lang.org/docs/v1.0/elixir/Kernel.html#self/0">Kernel.self/0</a>).
+In the case of <code>Counter.click/0</code>,
+<code>self/0</code> will be the pid of the process that called the function (the shell in
+the example above), because <code>Counter.click/0</code> is just a simple function and will
+therefore be executed by the process that calls it.</p>
+
+<h2 id="refactoring-shared-code-and-logical-groups">Refactoring shared code and logical groups</h2>
+
+<p>There&rsquo;s a lot of repeated code in the counter example above. Also, the
+implementataion of the counter logic is interspersed with lower-level message
+handling.  You&rsquo;re a good programmer and this rubs you the wrong way.
+So let&rsquo;s refactor the code to share some of the common bits and clean it up quite a lot.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">GenCounter</span> do
+  <span style="color:#75715e"># API</span>
+  def new do
+    spawn(fn <span style="color:#f92672">-&gt;</span> loop(<span style="color:#ae81ff">0</span>) end)
+  end
+
+  def click(pid) do
+    make_call(pid, <span style="color:#e6db74">:click</span>)
+  end
+
+  def get(pid) do
+    make_call(pid, <span style="color:#e6db74">:get</span>)
+  end
+
+  def set(pid, new_value) do
+    make_call(pid, {<span style="color:#e6db74">:set</span>, new_value})
+  end
+
+  <span style="color:#75715e"># message handlers</span>
+  <span style="color:#75715e"># handle_msg(message, current_state) -&gt; {reply, new_state}</span>
+  defp handle_msg(<span style="color:#e6db74">:click</span>, n), <span style="color:#e6db74">do</span>: {n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>}
+  defp handle_msg(<span style="color:#e6db74">:get</span>, n), <span style="color:#e6db74">do</span>: {n, n}
+  defp handle_msg({<span style="color:#e6db74">:set</span>, new_value}, _n), <span style="color:#e6db74">do</span>: {<span style="color:#e6db74">:ok</span>, new_value}
+
+  <span style="color:#75715e"># main state loop</span>
+  defp loop(state) do
+    receive do
+      {from, msg} <span style="color:#f92672">-&gt;</span>
+        {reply, new_state} <span style="color:#f92672">=</span> handle_msg(msg, state)
+        send(from, reply)
+        loop(new_state)
+    end
+  end
+
+  <span style="color:#75715e"># call helper</span>
+  defp make_call(pid, msg) do
+    send(pid, {self(), msg})
+    receive do x <span style="color:#f92672">-&gt;</span> x end
+  end
+end</code></pre></div>
+<p>This code has the same functionality as before, but is factored
+to avoid repeated code and to hopefully group together the important bits of
+our API and logic.  Our API consists of using the <code>make_call/2</code> helper
+to send messages and receive the response, which effectively translates
+our API into message semantics.  All of the actual counter logic boils down to
+defining how the process should react to various messages,
+which we implement in the <code>handle_msg/2</code> callbacks.</p>
+
+<p>A pattern is starting to emerge here. We have an API that makes calls by
+sending messages to an underlying process state loop, and that process
+state loop handles those messages by delegating to message callbacks.  The
+<code>loop/1</code> and <code>make_call/2</code> helpers are low-level and generic.  They also
+don&rsquo;t handle a ton of edge cases: what happens if the process dies or takes
+too long to respond to a message? What happens when we send an unexpected message?
+What if we don&rsquo;t need to respond to a message (i.e., a broadcast)?  How does
+the state loop handle shutdown?  What if we want our process not to respond
+immediately but instead do some work and then respond when that work is done?</p>
+
+<h2 id="production-ready-with-genserver">Production-ready with GenServer</h2>
+
+<p><a href="http://elixir-lang.org/docs/v1.0/elixir/GenServer.html">GenServer</a> implements
+the generic part of our counter process, and does it very well.  GenServer is an
+Elixir wrapper around the Erlang
+<a href="http://www.erlang.org/doc/design_principles/gen_server_concepts.html">gen_server</a>
+module, which is part of the <a href="http://www.erlang.org/doc/design_principles/des_princ.html">OTP</a>
+library.</p>
+
+<p>Rewriting our counter using GenServer is fairly straightforward.  Essentially,
+we add <code>use GenServer</code> to import the GenServer behavior, use
+<a href="http://elixir-lang.org/docs/v1.0/elixir/GenServer.html#start_link/3">GenServer.start_link/3</a>
+instead of <code>Kernel.spawn/1</code>,
+<a href="http://elixir-lang.org/docs/v1.0/elixir/GenServer.html#call/3">GenServer.call/3</a> instead of
+our <code>make_call/2</code> helper, and implement <code>init</code> and <code>handle_call</code> callbacks to define
+our logic.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">CounterServer</span> do
+  use <span style="color:#a6e22e">GenServer</span>
+
+  <span style="color:#75715e"># API</span>
+  def new do
+    <span style="color:#a6e22e">GenServer</span><span style="color:#f92672">.</span>start_link(__MODULE__, <span style="color:#ae81ff">0</span>)
+  end
+
+  def click(pid) do
+    <span style="color:#a6e22e">GenServer</span><span style="color:#f92672">.</span>call(pid, <span style="color:#e6db74">:click</span>)
+  end
+
+  def set(pid, new_value) do
+    <span style="color:#a6e22e">GenServer</span><span style="color:#f92672">.</span>call(pid, {<span style="color:#e6db74">:set</span>, new_value})
+  end
+
+  def get(pid) do
+    <span style="color:#a6e22e">GenServer</span><span style="color:#f92672">.</span>call(pid, <span style="color:#e6db74">:get</span>)
+  end
+
+  <span style="color:#75715e"># GenServer callbacks</span>
+
+  <span style="color:#75715e"># init(arguments) -&gt; {:ok, state}</span>
+  <span style="color:#75715e"># see http://elixir-lang.org/docs/v1.0/elixir/GenServer.html</span>
+  def init(n) do
+    {<span style="color:#e6db74">:ok</span>, n}
+  end
+
+  <span style="color:#75715e"># handle_call(message, from_pid, state) -&gt; {:reply, response, new_state}</span>
+  <span style="color:#75715e"># see http://elixir-lang.org/docs/v1.0/elixir/GenServer.html</span>
+  def handle_call(<span style="color:#e6db74">:click</span>, _from, n) do
+    {<span style="color:#e6db74">:reply</span>, n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>}
+  end
+  def handle_call(<span style="color:#e6db74">:get</span>, _from, n) do
+    {<span style="color:#e6db74">:reply</span>, n, n}
+  end
+  def handle_call({<span style="color:#e6db74">:set</span>, new_value}, _from, _n) do
+    {<span style="color:#e6db74">:reply</span>, <span style="color:#e6db74">:ok</span>, new_value}
+  end
+end</code></pre></div>
+<p>By using GenServer, we get a ton of functionality for free.  For example,
+<code>GenServer.call/3</code> takes an optional timeout argument which we can use to
+guarantee that the calling process never hangs while waiting for the GenServer
+to respond.  We haven&rsquo;t implemented it here, but GenServer can also handle
+termination callbacks, broadcast messages, bare messages (via <code>Kernel.send/2</code>
+as opposed to <code>GenServer.call/3</code> or <code>GenServer.cast/2</code>), process
+registration, idle timeouts, and even hot code swapping.</p>
+
+<h2 id="an-elixir-bonus-using-agent">An Elixir bonus - using Agent</h2>
+
+<p>GenServer is essentially a direct adaptation of Erlang&rsquo;s gen_server.  The Elixir
+developers realized that many times we use a fairly small subset of GenServer&rsquo;s
+capabilities, more or less just to store some state and provide an
+API for accessing that state.  The
+<a href="http://elixir-lang.org/docs/v1.0/elixir/Agent.html">Agent</a> module is designed
+for just that use case.</p>
+
+<p>Here is how we could rewrite our counter using the Agent module.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-elixir" data-lang="elixir">defmodule <span style="color:#a6e22e">CounterAgent</span> do
+  def new do
+    <span style="color:#a6e22e">Agent</span><span style="color:#f92672">.</span>start_link(fn <span style="color:#f92672">-&gt;</span> <span style="color:#ae81ff">0</span> end)
+  end
+
+  def click(pid) do
+    <span style="color:#a6e22e">Agent</span><span style="color:#f92672">.</span>get_and_update(pid, fn(n) <span style="color:#f92672">-&gt;</span> {n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, n <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>} end)
+  end
+
+  def set(pid, new_value) do
+    <span style="color:#a6e22e">Agent</span><span style="color:#f92672">.</span>update(pid, fn(_n) <span style="color:#f92672">-&gt;</span> new_value end)
+  end
+
+  def get(pid) do
+    <span style="color:#a6e22e">Agent</span><span style="color:#f92672">.</span>get(pid, fn(n) <span style="color:#f92672">-&gt;</span> n end)
+  end
+end</code></pre></div>
+<p>This reduces our Counter to just four named functions.  Much of the work
+is done by anonymous functions that we supply to the various
+Agent functions.  For example, the initializer is simply <code>fn -&gt; 0 end</code> to
+set the initial value to zero, and the getter is <code>fn(n) -&gt; n end</code> which
+just returns the current state.</p>
+
+<h2 id="the-end">The end</h2>
+
+<p>There it is.  We use processes to keep track of state in Elixir, and
+messages between processes to access and control that state.  Elixir
+is very similar to, and in fact 100% compatible with,
+Erlang in this way.  Elixir provides the Agent module to handle many
+of the most basic use cases, and the GenServer module to provide
+more flexibility.</p>
+
+<p>Solving problems by using processes and messaging can be hard to
+wrap your head around at first.  However, once it clicks for you, many
+problems become much easier to solve in this paradigm.</p>
+
+
+
+
+
+
+
+
+
+    </section>
+
+
+  <footer class="post-footer">
+
+
+    
+
+    
+
+
+
+
+
+
+
+
+
+<section class="author">
+  <h4><a href="https://dantswain.github.io/">Dan Swain</a></h4>
+  
+  <p>Fellow at simpli.fi. Robotics Ph.D. I like building things. </p>
+  
+  <div class="author-meta">
+    <span class="author-location icon-location">Rochester, NY</span>
+    <span class="author-link icon-link"><a href="https://dantswain.com">https://dantswain.com</a></span>
+  </div>
+</section>
+
+
+
+
+    
+<section class="share">
+  <h4>Share this post</h4>
+  <a class="icon-twitter" style="font-size: 1.4em" href="https://twitter.com/share?text=Storing%20state%20in%20Elixir%20with%20processes&nbsp;-&nbsp;Dan%27s%20Blog&amp;url=https%3a%2f%2fdantswain.github.io%2f2015%2f01%2f06%2fstoring-state-in-elixir-with-processes%2f"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+      <span class="hidden">Twitter</span>
+  </a>
+  <a class="icon-facebook" style="font-size: 1.4em" href="https://www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fdantswain.github.io%2f2015%2f01%2f06%2fstoring-state-in-elixir-with-processes%2f"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+      <span class="hidden">Facebook</span>
+  </a>
+  <a class="icon-pinterest" style="font-size: 1.4em" href="http://pinterest.com/pin/create/button/?url=https%3a%2f%2fdantswain.github.io%2f2015%2f01%2f06%2fstoring-state-in-elixir-with-processes%2f&amp;description=Storing%20state%20in%20Elixir%20with%20processes"
+      onclick="window.open(this.href, 'pinterest-share','width=580,height=296');return false;">
+      <span class="hidden">Pinterest</span>
+  </a>
+  <a class="icon-google-plus" style="font-size: 1.4em" href="https://plus.google.com/share?url=https%3a%2f%2fdantswain.github.io%2f2015%2f01%2f06%2fstoring-state-in-elixir-with-processes%2f"
+     onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+      <span class="hidden">Google+</span>
+  </a>
+</section>
+
+
+
+    
+
+<div id="disqus_thread"></div>
+<script>
+
+
+
+
+var disqus_config = function () {
+this.page.url = "https:\/\/dantswain.github.io\/2015\/01\/06\/storing-state-in-elixir-with-processes\/";  
+this.page.identifier = "https:\/\/dantswain.github.io\/2015\/01\/06\/storing-state-in-elixir-with-processes\/"; 
+};
+
+(function() { 
+var d = document, s = d.createElement('script');
+s.src = 'https://dantswainblog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+
+
+
+
+  </footer>
+</article>
+
+</main>
+
+<aside class="read-next">
+  
+      <a class="read-next-story" style="no-cover" href="/2015/04/19/integration-testing-a-json-api-in-phoenix/">
+          <section class="post">
+              <h2>Integration Testing a JSON API in Phoenix</h2>
+              
+          </section>
+      </a>
+  
+  
+      <a class="read-next-story prev" style="no-cover" href="/2014/09/27/storing-state-in-erlang-with-processes/">
+          <section class="post">
+              <h2>Storing state in Erlang with processes</h2>
+          </section>
+      </a>
+  
+</aside>
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">Dan&#39;s Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="http://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/vjeantet/hugo-theme-casper">Casper</a> theme</section>
+        
+    </footer>
+    </div>
+    
+    
+</body>
+</html>
+

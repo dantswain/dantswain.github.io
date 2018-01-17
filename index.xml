@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Dan&#39;s Blog</title>
+    <link>https://dantswain.github.io/</link>
+    <description>Recent content on Dan&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 02 May 2015 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://dantswain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Generating an Erlang sys.config from an Elixir config.exs</title>
+      <link>https://dantswain.github.io/2015/05/02/generating-an-erlang-sys.config-from-an-elixir-config.exs/</link>
+      <pubDate>Sat, 02 May 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://dantswain.github.io/2015/05/02/generating-an-erlang-sys.config-from-an-elixir-config.exs/</guid>
+      <description>This post describes Erlang&amp;rsquo;s sys.config and the equivalent config.exs in Elixir and how you can convert from config.exs to sys.config (the link is to a script that does this). I also talk a little about how you could use this to deploy Elixir projects using Chef.
+Erlang&amp;rsquo;s sys.config Erlang releases use a file called sys.config for configuration values. This is the place to put your OTP applications&amp;rsquo; configuration in addition to configuration for system applications like the logger and sasl.</description>
+    </item>
+    
+    <item>
+      <title>Integration Testing a JSON API in Phoenix</title>
+      <link>https://dantswain.github.io/2015/04/19/integration-testing-a-json-api-in-phoenix/</link>
+      <pubDate>Sun, 19 Apr 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://dantswain.github.io/2015/04/19/integration-testing-a-json-api-in-phoenix/</guid>
+      <description>TL;DR To do integration testing in Phoenix, first enable the app&amp;rsquo;s content serving in its config, then use an HTTP client library (I use HTTPoison below) to make requests. The source code corresponding to this post is on my github at https://github.com/dantswain/calculon.
+Introduction (plus a little discourse on testing) I like integration-level testing, especially for web apps and doubly so for APIs. A good integration test suite can help you work out usability issues with your API, give you confidence that your deployment is stable, and provide a springboard for troubleshooting issues down the road.</description>
+    </item>
+    
+    <item>
+      <title>Storing state in Elixir with processes</title>
+      <link>https://dantswain.github.io/2015/01/06/storing-state-in-elixir-with-processes/</link>
+      <pubDate>Tue, 06 Jan 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://dantswain.github.io/2015/01/06/storing-state-in-elixir-with-processes/</guid>
+      <description>I&amp;rsquo;ve been getting into Elixir lately. I&amp;rsquo;m still learning, and one thing that helps me learn new languages is to take a problem I&amp;rsquo;ve solved in another language and solve it in the new language. A few months ago I wrote about storing state in erlang with processes and I thought it would be an interesting exercise to convert that discussion to Elixir.
+I&amp;rsquo;ll start out with a solution that&amp;rsquo;s too simple to be useful.</description>
+    </item>
+    
+    <item>
+      <title>Storing state in Erlang with processes</title>
+      <link>https://dantswain.github.io/2014/09/27/storing-state-in-erlang-with-processes/</link>
+      <pubDate>Sat, 27 Sep 2014 00:00:00 +0000</pubDate>
+      
+      <guid>https://dantswain.github.io/2014/09/27/storing-state-in-erlang-with-processes/</guid>
+      <description>State is how we make programs do non-trivial things. If we&amp;rsquo;re writing a video game, one of its states might be a count of the number of bad guys that have been defeated. In most programming languages, we would accomplish this by assigning the count to a variable and then updating the value each time a new bad guy is defeated. Erlang, however, doesn&amp;rsquo;t allow us to change the value of a variable once it has been set (single assignment).</description>
+    </item>
+    
+    <item>
+      <title>New Blog Design</title>
+      <link>https://dantswain.github.io/2013/10/27/new-blog-design/</link>
+      <pubDate>Sun, 27 Oct 2013 00:00:00 +0000</pubDate>
+      
+      <guid>https://dantswain.github.io/2013/10/27/new-blog-design/</guid>
+      <description>I think a lot of developers have this intention of creating and maintaining a blog. I started this one over a year ago and have published a whopping two posts. I&amp;rsquo;d call it a success!
+After those two posts, I felt it was obviously time for a redesign. The main purpose of this post is to give credit to some people that contributed in one way or another to this redesign.</description>
+    </item>
+    
+    <item>
+      <title>Erlang: First element in a list that matches some condition</title>
+      <link>https://dantswain.github.io/2012/10/05/erlang-first-element-in-a-list-that-matches-some-condition/</link>
+      <pubDate>Fri, 05 Oct 2012 00:00:00 +0000</pubDate>
+      
+      <guid>https://dantswain.github.io/2012/10/05/erlang-first-element-in-a-list-that-matches-some-condition/</guid>
+      <description>The short answer: first(L, Condition, Default) -&amp;gt; case lists:dropwhile(fun(E) -&amp;gt; not Condition(E) end, L) of [] -&amp;gt; Default; [F | _] -&amp;gt; F end. 3 = first([0, 1, 2, 3, 4, 5], fun(E) -&amp;gt; E &amp;gt; 2 end, 0). 0 = first([0, 1, 2, 3, 4, 5], fun(E) -&amp;gt; E &amp;lt; 0 end, 0). Thanks to Odobenus Rosmarus, who provided this solution to my Stack Overflow question.
+The long answer: I recently needed an Erlang function that looks through a list and returns the first element matching some condition, without looking through the rest of the list.</description>
+    </item>
+    
+    <item>
+      <title>Opening a new instance of Aquamacs from the command line</title>
+      <link>https://dantswain.github.io/2012/03/19/opening-a-new-instance-of-aquamacs-from-the-command-line/</link>
+      <pubDate>Mon, 19 Mar 2012 00:00:00 +0000</pubDate>
+      
+      <guid>https://dantswain.github.io/2012/03/19/opening-a-new-instance-of-aquamacs-from-the-command-line/</guid>
+      <description>The short answer: #!/bin/bash open -na Aquamacs $*  The long answer: If you&amp;rsquo;ve used the OS X command line for any length of time, you&amp;rsquo;ve probably (hopefully) come across the open command. Its job is (shockingly enough) opening files and applications using Finder. It works for files:
+$ open index.html  opens index.html in your browser. It also works for applications:
+$ open -a Mail  opens Mail.app. It also works for opening files with an application:</description>
+    </item>
+    
+  </channel>
+</rss>
